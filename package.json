@@ -1,6 +1,6 @@
 {
   "name": "@holy/auth",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "HOLY fleet auth: trust the Hub, keep your own roles. Install, set HUB_URL + APP_SLUG, done.",
   "type": "module",
   "main": "src/index.ts",

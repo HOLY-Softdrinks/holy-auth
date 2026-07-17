@@ -20,8 +20,11 @@ export type HubUser = {
 // is the sole source of identity claims (id/email/name), which downstream code
 // persists via service-role writes.
 export async function getHubSession(): Promise<HubUser | null> {
-  const meta = await getHubMeta()
+  // Call cookies() FIRST so Next marks the route dynamic. If getHubMeta()
+  // (which reads HUB_URL) runs first, Next may try to statically prerender a
+  // Hub-guarded page and the build crashes wherever HUB_URL is unset (CI).
   const cookieStore = await cookies()
+  const meta = await getHubMeta()
 
   const hubAuth = createServerClient(meta.supabaseUrl, meta.supabaseAnonKey, {
     cookies: {
