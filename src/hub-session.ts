@@ -10,8 +10,15 @@ export type HubUser = {
 }
 
 // Reads the Hub session from the shared auth cookie (same host in dev; the Hub
-// sets its cookie on `.holy.com` in production so children can read it).
-// Returns null when there is no (or an expired) Hub session.
+// sets its cookie on `.apps.holy.com` in production so children can read it).
+// Returns null when there is no valid Hub session.
+//
+// SECURITY: the `user` object in the cookie is attacker-writable independently
+// of the signed access_token, so we NEVER trust it. We take only the
+// access_token from the cookie and re-verify it against the Hub's auth server
+// with getUser(token) — the returned user is cryptographically trustworthy and
+// is the sole source of identity claims (id/email/name), which downstream code
+// persists via service-role writes.
 export async function getHubSession(): Promise<HubUser | null> {
   const meta = await getHubMeta()
   const cookieStore = await cookies()
@@ -30,13 +37,14 @@ export async function getHubSession(): Promise<HubUser | null> {
   const {
     data: { session },
   } = await hubAuth.auth.getSession()
-  if (!session || session.expires_at === undefined) return null
-  if (session.expires_at * 1000 < Date.now()) return null
+  if (!session?.access_token) return null
 
-  // The signature is verified downstream: the Hub's Access API verifies the
-  // token against its auth server, and the child's PostgREST verifies it
-  // against the Hub JWKS. Here we only surface identity claims for display.
-  const user = session.user
+  const {
+    data: { user },
+    error,
+  } = await hubAuth.auth.getUser(session.access_token)
+  if (error || !user) return null
+
   const fullName =
     typeof user.user_metadata?.full_name === 'string' ? user.user_metadata.full_name : null
 
