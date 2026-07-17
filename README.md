@@ -2,6 +2,9 @@
 
 HOLY fleet auth for child apps. No Google, no OAuth wiring — trust the Hub.
 
+**Onboarding a new app? Start with [ONBOARDING.md](./ONBOARDING.md)** — the step-by-step playbook
+(register → trust → install → deploy) with the real gotchas from the first live retrofit.
+
 ## Setup (the whole thing)
 
 Installed as a git dependency (private repo):
