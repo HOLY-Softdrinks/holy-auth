@@ -10,19 +10,20 @@ import { getHubSession, type HubUser } from './hub-session'
 // - No Hub session      -> redirect to the Hub login
 // - Grant missing       -> redirect to the Hub "Request access" screen
 // - Hub unreachable/4xx -> throw (child error boundary shows it)
-export async function requireAppAccess(): Promise<HubUser> {
+export async function requireAppAccess(options?: { returnTo?: string }): Promise<HubUser> {
   const hubUrl = getHubUrl()
   const appSlug = getAppSlug()
+  const nextParam = options?.returnTo ? `?next=${encodeURIComponent(options.returnTo)}` : ''
 
   const hubUser = await getHubSession()
-  if (!hubUser) redirect(`${hubUrl}/login`)
+  if (!hubUser) redirect(`${hubUrl}/login${nextParam}`)
 
   const response = await fetch(`${hubUrl}/api/access?app=${encodeURIComponent(appSlug)}`, {
     headers: { Authorization: `Bearer ${hubUser.accessToken}` },
     cache: 'no-store',
   })
 
-  if (response.status === 401) redirect(`${hubUrl}/login`)
+  if (response.status === 401) redirect(`${hubUrl}/login${nextParam}`)
   if (!response.ok) {
     throw new Error(`@holy/auth: access check for "${appSlug}" failed (${response.status})`)
   }

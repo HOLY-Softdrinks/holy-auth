@@ -27,7 +27,8 @@ export function createHubProxyGuard(options?: { publicPaths?: string[] }) {
       .some((cookie) => cookie.name.startsWith(`sb-${projectRef}-auth-token`))
 
     if (!hasHubCookie) {
-      return NextResponse.redirect(`${getHubUrl()}/login`)
+      const returnTo = encodeURIComponent(request.url)
+      return NextResponse.redirect(`${getHubUrl()}/login?next=${returnTo}`)
     }
     return NextResponse.next()
   }
