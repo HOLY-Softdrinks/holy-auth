@@ -4,8 +4,19 @@ HOLY fleet auth for child apps. No Google, no OAuth wiring — trust the Hub.
 
 ## Setup (the whole thing)
 
+Installed as a git dependency (private repo, no registry/token needed — you
+just need read access to HOLY-Softdrinks and git auth, which every Team HOLY
+machine/CI already has):
+
 ```bash
-pnpm add @holy/auth
+pnpm add "@holy/auth@github:HOLY-Softdrinks/holy-auth#semver:^0.1.0"
+```
+
+The package ships TypeScript source, so add it to `transpilePackages` in
+`next.config.ts`:
+
+```ts
+const nextConfig = { transpilePackages: ['@holy/auth'] }
 ```
 
 ```env
