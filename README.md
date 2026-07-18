@@ -2,8 +2,8 @@
 
 HOLY fleet auth for child apps. No Google, no OAuth wiring — trust the Hub.
 
-**Onboarding a new app? Start with [ONBOARDING.md](./ONBOARDING.md)** — the step-by-step playbook
-(register → trust → install → deploy) with the real gotchas from the first live retrofit.
+**Connecting an app? Start with [ONBOARDING.md](./ONBOARDING.md)** — the step-by-step guide, with a
+path for apps that have no login yet and a path for apps already using Supabase + Google auth.
 
 ## Setup (the whole thing)
 
