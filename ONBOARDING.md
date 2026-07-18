@@ -70,9 +70,8 @@ await jitProvision({ table: 'profiles', primaryKeyColumn: 'hub_user_id',
 Seed your first admin in the DB. RLS keys on `(select auth.uid()) = hub_user_id`.
 
 ### 6. Deploy on `<slug>.apps.holy.com`
-Add the subdomain to your Vercel project. **CI needs git auth for this private repo** — see the
-README's "CI/CD" note for the `GH_DEPS_TOKEN` + install-command URL rewrite (Vercel/Actions runners
-have no git credentials, so `pnpm install` fails without it).
+Add the subdomain to your Vercel project. That's it — `@holy/auth` is a public repo, so `pnpm
+install` clones it anonymously on Vercel and GitHub Actions with no token or config.
 
 ## Verify (acceptance)
 1. Granted user: Hub gallery → your tile → lands in your app, provisioned, correct role, RLS works.

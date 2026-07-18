@@ -7,26 +7,12 @@ HOLY fleet auth for child apps. No Google, no OAuth wiring — trust the Hub.
 
 ## Setup (the whole thing)
 
-Installed as a git dependency (private repo):
+Installed as a git dependency (public repo — clones anonymously, no token needed
+anywhere: local, Vercel, and GitHub Actions all just work):
 
 ```bash
 pnpm add "@holy/auth@github:HOLY-Softdrinks/holy-auth#semver:^0.2.0"
 ```
-
-⚠ CI/CD needs git credentials for the private repo. Local dev works with your
-gh auth, but Vercel build containers and GitHub Actions runners do NOT — `pnpm
-install` fails with "could not read Username". Per-app fix (proven in HOLY Grail):
-create a fine-grained PAT (Contents: read-only, ONLY the holy-auth repo), expose
-it as `GH_DEPS_TOKEN`, and rewrite the git URL in the install step:
-
-```json
-// vercel.json
-{ "installCommand": "git config --global url.\"https://x-access-token:${GH_DEPS_TOKEN}@github.com/HOLY-Softdrinks/\".insteadOf \"https://github.com/HOLY-Softdrinks/\" && pnpm install" }
-```
-
-(Add the same rewrite + a repo secret to any GitHub Actions workflow.) Longer
-term this trick goes away by publishing to GitHub Packages (npm) — recommended
-before onboarding more apps.
 
 The package ships TypeScript source, so add it to `transpilePackages` in
 `next.config.ts`:
