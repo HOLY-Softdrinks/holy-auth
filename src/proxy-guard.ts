@@ -2,9 +2,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { getHubMeta, getHubUrl } from './config'
 import {
   DEV_CALLBACK_PATH,
-  buildDevHandoffUrl,
   handleDevCallback,
   isLocalDevRequest,
+  redirectToDevHandoff,
 } from './dev-callback'
 
 // Lightweight route protection for the child's proxy.ts (Next.js 16):
@@ -43,7 +43,7 @@ export function createHubProxyGuard(options?: { publicPaths?: string[] }) {
 
     if (!hasHubCookie) {
       if (isLocalDevRequest(request)) {
-        return NextResponse.redirect(buildDevHandoffUrl(request))
+        return redirectToDevHandoff(request)
       }
       const returnTo = encodeURIComponent(request.url)
       return NextResponse.redirect(`${getHubUrl()}/login?next=${returnTo}`)
