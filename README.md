@@ -1,6 +1,6 @@
 # @holy/auth
 
-HOLY fleet auth for child apps. No Google, no OAuth wiring — trust the Hub.
+HOLY fleet auth for child apps. No Google, no OAuth wiring — trust the Portal.
 
 **Connecting an app? Start with [ONBOARDING.md](./ONBOARDING.md)** — the step-by-step guide, with a
 path for apps that have no login yet and a path for apps already using Supabase + Google auth.
@@ -22,18 +22,16 @@ const nextConfig = { transpilePackages: ['@holy/auth'] }
 ```
 
 ```env
-HUB_URL=https://apps.holy.com        # the Hub
-APP_SLUG=my-app                      # this app's slug in the Hub registry
+HUB_URL=https://apps.holy.com        # the Portal
+APP_SLUG=my-app                      # this app's slug in the Portal registry
 # plus your app's own Supabase (standard):
 NEXT_PUBLIC_SUPABASE_URL=...
 NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...        # only if you use jitProvision()
 ```
 
-One-time on your Supabase project (no Google provider!): register the Hub as a
-third-party issuer — see ADR-001 in the holy-hub repo.
-
-Next config: `transpilePackages: ['@holy/auth']` (the package ships TS source).
+One-time on your Supabase project (no Google provider!): register the Portal as a
+third-party issuer — see [ONBOARDING.md](./ONBOARDING.md) Step B.
 
 ## Usage
 
@@ -45,5 +43,5 @@ export const proxy = createHubProxyGuard({ publicPaths: ['/'] })
 // app/protected/page.tsx
 import { requireAppAccess, createHubClient } from '@holy/auth'
 const hubUser = await requireAppAccess()          // login + grant check, or redirect
-const supabase = createHubClient<Database>()      // your DB, RLS sees the Hub user
+const supabase = createHubClient<Database>()      // your DB, RLS sees the Portal user
 ```
