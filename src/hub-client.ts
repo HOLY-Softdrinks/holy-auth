@@ -31,7 +31,7 @@ export async function jitProvision(input: {
   table: string
   primaryKeyColumn: string
   row: Record<string, unknown>
-}): Promise<{ ok: true } | { ok: false; error: string }> {
+}): Promise<{ ok: true; row: Record<string, unknown> } | { ok: false; error: string }> {
   const childUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!childUrl || !serviceRoleKey) {
@@ -41,9 +41,26 @@ export async function jitProvision(input: {
   const admin = createClient(childUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   })
-  const { error } = await admin
+
+  const { data: upserted, error } = await admin
     .from(input.table)
     .upsert(input.row, { onConflict: input.primaryKeyColumn, ignoreDuplicates: true })
+    .select()
   if (error) return { ok: false, error: 'Provisioning failed' }
-  return { ok: true }
+
+  // USE THE RETURNED ROW, don't re-query it through the RLS-scoped client in the
+  // same request — that read-after-write across two different clients can come
+  // back empty on the very first login (looks like "not invited"). ignoreDuplicates
+  // returns nothing when the row already existed, so read it back here with the
+  // SAME service client instead.
+  const freshRow = upserted?.[0]
+  if (freshRow) return { ok: true, row: freshRow }
+
+  const { data: existing, error: readError } = await admin
+    .from(input.table)
+    .select()
+    .eq(input.primaryKeyColumn, input.row[input.primaryKeyColumn])
+    .maybeSingle()
+  if (readError || !existing) return { ok: false, error: 'Provisioning read-back failed' }
+  return { ok: true, row: existing }
 }

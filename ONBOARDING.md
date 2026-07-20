@@ -96,14 +96,24 @@ Build your role model fresh, keyed to the Portal id.
 1. Create a profile/roles table keyed by the Portal uuid: `hub_user_id uuid primary key` (= `auth.uid()`
    under a Portal token). Add whatever role columns you need.
 2. RLS policies key on `(select auth.uid()) = hub_user_id`.
-3. JIT-provision the profile on first entry:
+3. JIT-provision the profile on first entry — and **use the row it returns**:
    ```ts
    const hubUser = await requireAppAccess()
-   await jitProvision({
+   const provisioned = await jitProvision({
      table: 'profiles', primaryKeyColumn: 'hub_user_id',
      row: { hub_user_id: hubUser.id, email: hubUser.email, full_name: hubUser.fullName },
    })
+   if (!provisioned.ok) throw new Error('Profile setup failed')
+   const profile = provisioned.row   // ← use this; see warning below
    ```
+
+   > ⚠ **First-login gotcha:** do NOT provision and then immediately *re-query* the profile
+   > through the RLS-scoped client in the same request. That read-after-write crosses two
+   > different DB clients and can come back empty on the very first login — your app then
+   > wrongly shows "no access / not invited", and the second attempt works. Use the row
+   > `jitProvision` returns (it reads back with the same service client), and always upsert
+   > (never insert) so layout + page provisioning in parallel can't collide on the primary key.
+
 4. Seed your first admin directly in the DB (or a "first user becomes admin" rule).
 
 Done — skip to **Deploy**.
@@ -140,7 +150,10 @@ the two, then cut over.
 6. **Relax foreign keys** that point at your local `auth.users` (profile id, any `user_id`,
    `created_by`, etc.) — Portal-only users have no row in your local `auth.users`. This is a constraint
    change, no data change.
-7. **Cut over.** Point your default login at the Portal (`requireAppAccess` / `createHubClient`), gated
+7. **Cut over.** If you JIT-provision profiles on first Portal entry, use the row `jitProvision`
+   returns — see the first-login gotcha in Path 1 step 3 (re-querying through the RLS client right
+   after provisioning can miss the fresh row and wrongly show "no access").
+   Point your default login at the Portal (`requireAppAccess` / `createHubClient`), gated
    by an env flag (e.g. `HUB_LOGIN_DEFAULT=true`) so you can flip back instantly. Verify a real user
    end to end: Portal → your app → correct role → RLS correct → revoke in the Portal blocks them.
 8. **Decommission** only after a safe rollback window: remove the Google provider and old login UI,
