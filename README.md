@@ -45,3 +45,19 @@ import { requireAppAccess, createHubClient } from '@holy/auth'
 const hubUser = await requireAppAccess()          // login + grant check, or redirect
 const supabase = createHubClient<Database>()      // your DB, RLS sees the Portal user
 ```
+
+## Local development (v0.3.0+)
+
+Production auth works by cookie sharing on `.apps.holy.com`, which localhost can't read.
+You do NOT need to run the Portal locally. With `NODE_ENV=development` on
+`localhost`/`127.0.0.1`, the proxy guard runs a dev-login handoff automatically:
+
+1. Hit any protected page → you're sent to the Portal's `/dev-handoff` confirm screen
+2. Click **Continue to localhost:PORT** → the Portal mints a one-time login token
+3. The guard exchanges it at `/__hub/dev-callback` into an independent Hub session
+   cookie on localhost, and drops you back on the page you wanted
+
+Keep `HUB_URL=https://apps.holy.com` in `.env.local` — same value as production.
+The token is single-use; the resulting localhost session refreshes on its own and
+never interferes with your Portal session. Only confirm handoffs for apps you are
+running yourself.

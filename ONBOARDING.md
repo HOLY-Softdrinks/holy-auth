@@ -161,6 +161,27 @@ the two, then cut over.
 
 ---
 
+## Local development (no local Portal needed)
+
+Production auth is cookie sharing on `.apps.holy.com` — your app on `localhost` can never read
+that cookie, so plain login is impossible there. From `@holy/auth` v0.3.0 the proxy guard solves
+this automatically when `NODE_ENV=development` and the request host is `localhost`/`127.0.0.1`:
+
+1. You open a protected page → the guard sends you to the Portal's `/dev-handoff` confirm screen
+   (log in there normally if you aren't yet).
+2. You click **Continue to localhost:PORT** → the Portal mints a one-time login token and
+   redirects to `/__hub/dev-callback` on your app.
+3. The guard exchanges the token into an independent Hub session cookie on localhost and drops
+   you on the page you asked for.
+
+Notes:
+- Keep `HUB_URL` and `APP_SLUG` exactly as in production. Your app must be registered in the
+  Portal (status `development` is fine) and you need a grant for it — otherwise you'll land on
+  the Portal's "Request access" screen, which is the system working, not a bug.
+- The token is single-use and short-lived. The localhost session is independent of your Portal
+  session (own refresh-token family) — signing out of one does not affect the other.
+- Only confirm a handoff for an app you are running yourself.
+
 ## Deploy
 
 Add `<slug>.apps.holy.com` as a domain on your Vercel project. `pnpm install` pulls `@holy/auth`
