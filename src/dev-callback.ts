@@ -28,6 +28,21 @@ export function isLocalDevRequest(request: NextRequest): boolean {
   )
 }
 
+// Vercel preview deployments can't read the Hub cookie either (they live on
+// *.vercel.app). VERCEL_ENV is set by the platform and is 'production' on the
+// real domain — a server-controlled gate, deliberately not derived from the
+// request. The Portal only hands tokens to hosts on OUR Vercel team suffix,
+// so a preview gate here never widens where tokens can go.
+export function isPreviewRequest(): boolean {
+  return process.env.VERCEL_ENV === 'preview'
+}
+
+// Umbrella gate for every dev-handoff surface. Custom proxies should use this
+// (not isLocalDevRequest) so previews work too.
+export function isDevHandoffRequest(request: NextRequest): boolean {
+  return isLocalDevRequest(request) || isPreviewRequest()
+}
+
 // Same-origin relative paths only — reject `//host` and backslash variants.
 function sanitizeReturnTo(rawReturnTo: string | null): string {
   if (!rawReturnTo) return '/'
@@ -61,6 +76,7 @@ export function redirectToDevHandoff(
     sameSite: 'lax',
     maxAge: STATE_TTL_SECONDS,
     path: '/',
+    secure: request.nextUrl.protocol === 'https:',
   })
   return response
 }
@@ -68,7 +84,7 @@ export function redirectToDevHandoff(
 export async function handleDevCallback(request: NextRequest): Promise<NextResponse> {
   // Defense in depth: enforce the dev-only precondition here too, not just in
   // the proxy guard that routes to us.
-  if (!isLocalDevRequest(request)) {
+  if (!isDevHandoffRequest(request)) {
     return NextResponse.redirect(new URL('/', request.nextUrl.origin))
   }
 
