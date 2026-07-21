@@ -3,7 +3,7 @@ import { getHubMeta, getHubUrl } from './config'
 import {
   DEV_CALLBACK_PATH,
   handleDevCallback,
-  isLocalDevRequest,
+  isDevHandoffRequest,
   redirectToDevHandoff,
 } from './dev-callback'
 
@@ -25,7 +25,7 @@ export function createHubProxyGuard(options?: { publicPaths?: string[] }) {
   return async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl
 
-    if (isLocalDevRequest(request) && pathname === DEV_CALLBACK_PATH) {
+    if (isDevHandoffRequest(request) && pathname === DEV_CALLBACK_PATH) {
       return handleDevCallback(request)
     }
     const isPublic = publicPaths.some((publicPath) =>
@@ -42,7 +42,7 @@ export function createHubProxyGuard(options?: { publicPaths?: string[] }) {
       .some((cookie) => cookie.name.startsWith(`sb-${projectRef}-auth-token`))
 
     if (!hasHubCookie) {
-      if (isLocalDevRequest(request)) {
+      if (isDevHandoffRequest(request)) {
         return redirectToDevHandoff(request)
       }
       const returnTo = encodeURIComponent(request.url)

@@ -46,6 +46,15 @@ const hubUser = await requireAppAccess()          // login + grant check, or red
 const supabase = createHubClient<Database>()      // your DB, RLS sees the Portal user
 ```
 
+## Vercel previews (v0.4.0+)
+
+Preview deployments can't read the Hub cookie either. When `VERCEL_ENV=preview`, the
+proxy guard runs the same handoff automatically: open a protected page on the preview →
+confirm on the Portal → signed in on that preview host. The Portal only accepts preview
+targets on HOLY's own Vercel team suffix, and each new preview URL needs one fresh
+confirm click. Custom proxies: gate on `isDevHandoffRequest(request)` (covers localhost
+dev AND previews), not `isLocalDevRequest`.
+
 ## Local development (v0.3.0+)
 
 Production auth works by cookie sharing on `.apps.holy.com`, which localhost can't read.

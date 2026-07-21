@@ -181,6 +181,10 @@ Notes:
 - The token is single-use and short-lived. The localhost session is independent of your Portal
   session (own refresh-token family) — signing out of one does not affect the other.
 - Only confirm a handoff for an app you are running yourself.
+- **Vercel previews work the same way** (v0.4.0+): with `VERCEL_ENV=preview` the guard
+  runs the identical handoff on `*.vercel.app` preview URLs. The Portal only hands tokens
+  to hosts on HOLY's own Vercel team suffix, so previews must be deployed inside the HOLY
+  team. Each new preview URL is a new host → one fresh confirm click per deployment.
 
 ## Deploy
 

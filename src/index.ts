@@ -6,6 +6,8 @@ export { createHubProxyGuard } from './proxy-guard'
 export {
   DEV_CALLBACK_PATH,
   handleDevCallback,
+  isDevHandoffRequest,
   isLocalDevRequest,
+  isPreviewRequest,
   redirectToDevHandoff,
 } from './dev-callback'
