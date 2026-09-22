@@ -93,4 +93,7 @@ child never rotates the Portal's shared token. That's what stops the old
   `/api/app-handoff` endpoint is deployed. Until then production reads the shared
   cookie exactly as before.
 - **Portal logout does not end child sessions.** A child session lives until it
-  expires or the app signs out locally (accepted trade-off — see ONBOARDING).
+  expires or the app signs out locally (accepted trade-off — see ONBOARDING). How long
+  it can live is set by the Hub Supabase project's session-lifetime setting, which is
+  **shared by the Portal and every child app** (they use one project), so it can't be
+  tuned per app.

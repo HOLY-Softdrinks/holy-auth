@@ -204,9 +204,11 @@ anonymously (public repo), so no build-time secrets are needed.
 - **Sign-out is per-session, both ways (v0.5.0+).** Your app holds its own Hub session
   (`holy-app-auth`, refreshed by the proxy), independent of the Portal's. Consequences:
   clearing your app's local session doesn't end the Portal session, **and Portal logout doesn't
-  end your app's session** — the child session lives until it expires (bounded by its refresh-token
-  TTL) or the app signs out locally. This is an accepted trade-off for collision-free refresh; link
-  to the Portal's logout if you want to send users there.
+  end your app's session** — the child session lives until it expires or the app signs out locally.
+  How long it can live is bounded by the Hub Supabase project's session-lifetime setting, which is
+  **shared by the Portal and every child app** (one project), so it applies to both and can't be set
+  per app. This is an accepted trade-off for collision-free refresh; link to the Portal's logout if
+  you want to send users there.
 - **The Access API is on your request hot path.** `requireAppAccess` calls the Portal on every
   navigation (that's what makes revocation instant). If Portal latency matters you may cache the verdict
   for ~60s (accepting slower revocation); don't cache longer without checking with a Portal admin.
