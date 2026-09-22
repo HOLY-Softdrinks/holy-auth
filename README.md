@@ -11,7 +11,7 @@ Installed as a git dependency (public repo — clones anonymously, no token need
 anywhere: local, Vercel, and GitHub Actions all just work):
 
 ```bash
-pnpm add "@holy/auth@github:HOLY-Softdrinks/holy-auth#semver:^0.2.0"
+pnpm add "@holy/auth@github:HOLY-Softdrinks/holy-auth#semver:^0.5.0"
 ```
 
 The package ships TypeScript source, so add it to `transpilePackages` in
@@ -67,6 +67,30 @@ You do NOT need to run the Portal locally. With `NODE_ENV=development` on
    cookie on localhost, and drops you back on the page you wanted
 
 Keep `HUB_URL=https://apps.holy.com` in `.env.local` — same value as production.
-The token is single-use; the resulting localhost session refreshes on its own and
-never interferes with your Portal session. Only confirm handoffs for apps you are
-running yourself.
+The token is single-use; the resulting localhost session is the child's own
+(`holy-app-auth`, host-only) and the **proxy refreshes it on every navigation**,
+so it outlives the ~1h access-token lifetime and never interferes with your Portal
+session. Only confirm handoffs for apps you are running yourself.
+
+## How the session works (v0.5.0+)
+
+Each child app holds its **own** Hub session in a host-only cookie named
+`holy-app-auth` — separate from the Portal's shared `sb-<ref>-auth-token` on
+`.apps.holy.com`. The proxy refreshes that child session (it's the only place
+Next.js lets you write cookies), using an independent refresh-token family, so a
+child never rotates the Portal's shared token. That's what stops the old
+~hourly logout.
+
+- **Requires Next.js 16** (`proxy.ts`). On Next 15 the proxy file never runs, so
+  the session can't refresh — the peer range is `next >=16` for this reason.
+- **Custom proxies:** call `refreshChildSession(request, response)` early in your
+  proxy (before returning) so the session refreshes. Route `HUB_CALLBACK_PATH`
+  to `handleHubCallback`.
+- **Kill switch:** set `HOLY_AUTH_CHILD_SESSION=0` to disable the child-session
+  path entirely and revert to reading the Portal's shared cookie.
+- **Production handoff** (each app minting its own session on first entry) is
+  opt-in via `HOLY_AUTH_PROD_HANDOFF=1`, and only after the Portal's
+  `/api/app-handoff` endpoint is deployed. Until then production reads the shared
+  cookie exactly as before.
+- **Portal logout does not end child sessions.** A child session lives until it
+  expires or the app signs out locally (accepted trade-off — see ONBOARDING).

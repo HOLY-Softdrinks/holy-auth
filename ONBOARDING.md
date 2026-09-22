@@ -201,8 +201,12 @@ anonymously (public repo), so no build-time secrets are needed.
 
 ## Known limitations (inherited; not your bug to fix)
 
-- **No fleet-wide sign-out yet.** Clearing your app's local session doesn't end the Portal session; the
-  shared cookie re-authenticates on the next visit. Link to the Portal's logout for a true sign-out.
+- **Sign-out is per-session, both ways (v0.5.0+).** Your app holds its own Hub session
+  (`holy-app-auth`, refreshed by the proxy), independent of the Portal's. Consequences:
+  clearing your app's local session doesn't end the Portal session, **and Portal logout doesn't
+  end your app's session** — the child session lives until it expires (bounded by its refresh-token
+  TTL) or the app signs out locally. This is an accepted trade-off for collision-free refresh; link
+  to the Portal's logout if you want to send users there.
 - **The Access API is on your request hot path.** `requireAppAccess` calls the Portal on every
   navigation (that's what makes revocation instant). If Portal latency matters you may cache the verdict
   for ~60s (accepting slower revocation); don't cache longer without checking with a Portal admin.
