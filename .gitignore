@@ -1,1 +1,8 @@
 node_modules/
+
+# Local agent / assistant tooling — never belongs in the shared repo.
+# May also contain machine-local API tokens (e.g. .codex/config.toml).
+.agents/
+.codex/
+.claude/
+.pandaos/
