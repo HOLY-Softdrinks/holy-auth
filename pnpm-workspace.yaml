@@ -1,0 +1,3 @@
+# sharp is an optional image library pulled in by Next; this library's checks do not process images.
+allowBuilds:
+  sharp: false

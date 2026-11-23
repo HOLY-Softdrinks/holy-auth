@@ -7,6 +7,8 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
     "jsx": "preserve"
   },
   "include": ["src/**/*.ts"]
