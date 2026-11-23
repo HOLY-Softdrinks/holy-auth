@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getAppSlug, getHubMeta, getHubUrl, isChildSessionEnabled } from './config'
+import { sanitizeReturnTo } from './return-path'
 import { CHILD_COOKIE_NAME, childCookieOptions } from './session-cookie'
 
 // Hub-login handoff. The child app holds its OWN Supabase session (an
@@ -75,15 +76,6 @@ export function isProdHandoffEnabled(): boolean {
 // True when this deployment should run the callback exchange at all.
 function isHandoffContext(request: NextRequest): boolean {
   return isDevHandoffRequest(request) || isProdHandoffEnabled()
-}
-
-// Same-origin relative paths only — reject `//host` and backslash variants.
-function sanitizeReturnTo(rawReturnTo: string | null): string {
-  if (!rawReturnTo) return '/'
-  if (rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') && !rawReturnTo.includes('\\')) {
-    return rawReturnTo
-  }
-  return '/'
 }
 
 function setStateCookie(response: NextResponse, state: string, isSecure: boolean): void {
@@ -182,7 +174,10 @@ export async function handleHubCallback(request: NextRequest): Promise<NextRespo
     return NextResponse.redirect(new URL('/', request.nextUrl.origin))
   }
 
-  const returnTo = sanitizeReturnTo(request.nextUrl.searchParams.get('return_to'))
+  const returnTo = sanitizeReturnTo(
+    request.nextUrl.searchParams.get('return_to'),
+    request.nextUrl.origin,
+  )
 
   const tokenHash = request.nextUrl.searchParams.get('token_hash')
   if (!tokenHash) return restartHandoff(request, { returnTo, error: 'missing_token' })
