@@ -92,11 +92,15 @@ child never rotates the Portal's shared token. That's what stops the old
   opt-in via `HOLY_AUTH_PROD_HANDOFF=1`, and only after the Portal's
   `/api/app-handoff` endpoint is deployed. Until then production reads the shared
   cookie exactly as before.
-- **Portal logout does not end child sessions.** A child session lives until it
-  expires or the app signs out locally (accepted trade-off — see ONBOARDING). How long
-  it can live is set by the Hub Supabase project's session-lifetime setting, which is
-  **shared by the Portal and every child app** (they use one project), so it can't be
-  tuned per app.
+- **Portal sign-out ends child sessions too.** The Portal's Sign out ends every session of
+  that person, including each app's own child session. The app notices on the next request
+  that verifies with the server (`requireAppAccess()`, `getHubSession()`); the proxy's
+  cookie check alone does not, so a page guarded only by the proxy can stay visible until
+  the access token expires. Measured 2026-11-26 on a preview: after a Portal sign-out the
+  app's next protected page asked to sign in again. Otherwise a child session lives until
+  it expires or the app signs out locally. How long it can live is set by the Hub Supabase
+  project's session-lifetime setting, which is **shared by the Portal and every child app**
+  (they use one project), so it can't be tuned per app.
 
 **Rate limits (v0.5.1+).** The Portal limits session renewals per
 server address. A refusal (HTTP 429) is treated like a Portal outage: the session
