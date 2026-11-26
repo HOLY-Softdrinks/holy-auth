@@ -97,3 +97,13 @@ child never rotates the Portal's shared token. That's what stops the old
   it can live is set by the Hub Supabase project's session-lifetime setting, which is
   **shared by the Portal and every child app** (they use one project), so it can't be
   tuned per app.
+
+**Rate limits (v0.5.1+).** The Portal limits session renewals per
+server address. A refusal (HTTP 429) is treated like a Portal outage: the session
+counts as `stale` (temporary), `requireAppAccess` throws to the error boundary,
+`checkAppAccess` returns `{ status: 'stale' }`, the proxy keeps the child cookie
+and the page does not renew a second time. Nothing retries automatically.
+Handle `stale` as "try again", never as signed out. Apps that read the Portal's
+shared cookie renew on every request once its token is older than an hour;
+turn on the production handoff (`HOLY_AUTH_PROD_HANDOFF=1`) so the app keeps
+and renews its own session instead.
