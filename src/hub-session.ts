@@ -1,9 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, headers } from 'next/headers'
 import { isTransientAuthError } from './auth-error'
 import { getHubMeta, isChildSessionEnabled, type HubMeta } from './config'
 import { isProdHandoffEnabled } from './hub-callback'
-import { CHILD_COOKIE_NAME, hasChildSessionCookie } from './session-cookie'
+import { CHILD_COOKIE_NAME, hasChildSessionCookie, SESSION_STATE_HEADER } from './session-cookie'
 
 export type HubUser = {
   id: string
@@ -112,6 +112,10 @@ export async function getHubSessionResult(): Promise<HubSessionResult> {
 
   const childPresent = isChildSessionEnabled() && hasChildSessionCookie(allCookies)
   if (childPresent) {
+    // Why: the proxy's renewal was refused moments ago; a second try spends the same limit (CLA-21).
+    if ((await headers()).get(SESSION_STATE_HEADER) === 'unavailable') {
+      return { status: 'stale', transient: true }
+    }
     const child = await readSession(meta, cookieStore, true, CHILD_COOKIE_NAME)
     if (child.status === 'active') return child
     if (child.status === 'stale' && child.transient) return child

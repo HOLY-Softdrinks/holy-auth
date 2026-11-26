@@ -40,3 +40,7 @@ export function childCookieOptions(isSecure: boolean): CookieOptions {
     path: '/',
   }
 }
+
+// Why: the proxy tells the page its renewal was just refused, so the page does
+// not spend the same rate limit on a second try (CLA-21).
+export const SESSION_STATE_HEADER = 'x-holy-auth-session'

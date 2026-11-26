@@ -1,7 +1,9 @@
 import { mock } from 'node:test'
 
 // Shared state the mocked boundary reads, so a test can steer verifyOtp.
-export const boundary = { verifyOtpError: null, fetchCalls: [] }
+// getSession: optional fake for the Hub client's getSession. cookies: what
+// next/headers returns for the current request.
+export const boundary = { verifyOtpError: null, fetchCalls: [], getSession: null, cookies: [], requestHeaders: {} }
 
 const srcUrl = (name) => new URL(`../src/${name}.ts`, import.meta.url).href
 
@@ -39,7 +41,8 @@ async function installMocks() {
       createServerClient: () => ({
         auth: {
           verifyOtp: async () => ({ error: boundary.verifyOtpError }),
-          getSession: async () => ({ data: { session: null }, error: null }),
+          getSession: async () =>
+            boundary.getSession ? boundary.getSession() : { data: { session: null }, error: null },
           getUser: async () => ({ data: { user: null }, error: null }),
         },
       }),
@@ -47,7 +50,12 @@ async function installMocks() {
   })
   mock.module('next/headers.js', {
     exports: {
-      cookies: async () => ({ getAll: () => [], get: () => undefined, set() {} }),
+      headers: async () => new Headers(boundary.requestHeaders),
+      cookies: async () => ({
+        getAll: () => boundary.cookies,
+        get: (name) => boundary.cookies.find((cookie) => cookie.name === name),
+        set() {},
+      }),
     },
   })
 }
