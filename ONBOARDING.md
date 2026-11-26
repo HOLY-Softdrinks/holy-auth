@@ -201,15 +201,20 @@ anonymously (public repo), so no build-time secrets are needed.
 
 ## Known limitations (inherited; not your bug to fix)
 
-- **Your app holds its own session (v0.5.0+).** Your app holds its own Hub session
-  (`holy-app-auth`, refreshed by the proxy), independent of the Portal's. Clearing your app's
-  local session doesn't end the Portal session. **A Portal sign-out does end your app's session:**
-  the Portal signs out every session of that person, and your app notices on the next request that
-  verifies with the server (`requireAppAccess()`, `getHubSession()`). The proxy's cookie check alone
-  does not notice, so guard every protected page with `requireAppAccess()`. Measured 2026-11-26 on a
-  preview. How long a session can live is bounded by the Hub Supabase project's session-lifetime
+- **Your app holds its own session where the handoff runs (v0.5.0+: localhost, previews, and
+  production with `HOLY_AUTH_PROD_HANDOFF=1`).** There your app holds its own Hub session
+  (`holy-app-auth`, refreshed by the proxy), independent of the Portal's. Without the production
+  handoff, production uses the Portal's shared session directly. Clearing your app's local session
+  doesn't end the Portal session. If you build an app sign-out, call `signOut({ scope: 'local' })`;
+  the default scope signs the person out of the Portal and every other app too.
+  **A Portal sign-out does end your app's session:** the Portal signs out every session of that
+  person on every device and browser, and your app notices on the next request that checks with the
+  Hub's auth server (`requireAppAccess()`, `checkAppAccess()`, `getHubSession()`). The proxy alone
+  does not reliably notice, so guard every protected page with `requireAppAccess()`. Measured
+  2026-11-26 on a preview. How long a session can live is bounded by the Hub Supabase project's session-lifetime
   setting, which is **shared by the Portal and every child app** (one project), so it applies to both
   and can't be set per app. Link to the Portal's logout if you want to send users there.
 - **The Access API is on your request hot path.** `requireAppAccess` calls the Portal on every
   navigation (that's what makes revocation instant). If Portal latency matters you may cache the verdict
   for ~60s (accepting slower revocation); don't cache longer without checking with a Portal admin.
+  A cached verdict also delays noticing a Portal sign-out by the same time.

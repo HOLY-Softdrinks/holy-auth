@@ -93,12 +93,17 @@ child never rotates the Portal's shared token. That's what stops the old
   `/api/app-handoff` endpoint is deployed. Until then production reads the shared
   cookie exactly as before.
 - **Portal sign-out ends child sessions too.** The Portal's Sign out ends every session of
-  that person, including each app's own child session. The app notices on the next request
-  that verifies with the server (`requireAppAccess()`, `getHubSession()`); the proxy's
-  cookie check alone does not, so a page guarded only by the proxy can stay visible until
-  the access token expires. Measured 2026-11-26 on a preview: after a Portal sign-out the
-  app's next protected page asked to sign in again. Otherwise a child session lives until
-  it expires or the app signs out locally. How long it can live is set by the Hub Supabase
+  that person on every device and browser, including each app's own child session. The app
+  notices on the next request that checks with the Hub's auth server (`requireAppAccess()`,
+  `checkAppAccess()`, `getHubSession()`). The proxy alone does not: on the child-session path
+  it only checks the token's signature and expiry, so a page guarded only by the proxy can
+  stay visible until the access token expires; on the shared-cookie path (production before
+  `HOLY_AUTH_PROD_HANDOFF=1`, or with `HOLY_AUTH_CHILD_SESSION=0`) it only checks that the
+  cookie exists, so such a page can stay visible for as long as the cookie does. Guard every
+  protected page with `requireAppAccess()`. Measured 2026-11-26 on a preview: after a Portal
+  sign-out the app's next protected page asked to sign in again. Otherwise a child session
+  lives until it expires or the app signs out locally (use `signOut({ scope: 'local' })`; the
+  default scope ends the Portal session and every other app's too). How long it can live is set by the Hub Supabase
   project's session-lifetime setting, which is **shared by the Portal and every child app**
   (they use one project), so it can't be tuned per app.
 
